@@ -34,5 +34,5 @@ print(car_text)
 driver.quit()
 
 df = pd.read_csv(StringIO(car_text))
-df.to_csv('car_data.csv', index=False)
+df.to_csv('scraped_dataset.csv', index=False)
 print(df)
