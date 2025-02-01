@@ -1,6 +1,7 @@
 import keras
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.layers import Dense, Dropout
@@ -52,7 +53,7 @@ def build_model():
 
 
 def plot_training_curves(epochs, loss, val_loss, metric, val_metric):
-    """Generic plotting function for any metric"""
+
     plt.figure(figsize=(12, 5))
 
     # Loss plot
@@ -64,7 +65,7 @@ def plot_training_curves(epochs, loss, val_loss, metric, val_metric):
     plt.ylabel('MSE')
     plt.legend()
 
-    # Metric plot (MAE in this case)
+    # Metric plot
     plt.subplot(1, 2, 2)
     plt.plot(epochs, metric, label='Training')
     plt.plot(epochs, val_metric, label='Validation')
@@ -73,11 +74,10 @@ def plot_training_curves(epochs, loss, val_loss, metric, val_metric):
     plt.ylabel('MAE')
     plt.legend()
 
-    plt.savefig('../../documentation/training_curves.png')
+    plt.savefig('../../documentation/training_curves.png',dpi=300)
     plt.close()
 
 def evaluate_model(model, history):
-    """Use history from training phase"""
     # Get actual epochs trained
     actual_epochs = len(history.history['loss'])
 
@@ -102,96 +102,85 @@ def save_training_report(history, path='../../documentation/'):
 
     pd.DataFrame(report, index=[0]).to_csv(f'{path}/training_report.csv', index=False)
 
+
 def plot_diagnostic_plots():
-        """
-        Generate four diagnostic plots for regression analysis:
-        1. Residual vs Fitted values
-        2. Square Root of Standardized Residuals vs Fitted values
-        3. Standardized Residual vs Theoretical Quantiles (Q-Q plot)
-        4. Residual vs Leverage with Cook's distance contours
+    # Load model and make predictions
+    model = load_model("currentAiSolution.keras")
+    y_pred = model.predict(x_test).flatten()
+    residuals = y_test - y_pred
+    standardized_residuals = (residuals - np.mean(residuals)) / np.std(residuals)
 
-        Parameters:
-        y_true (array-like): Actual target values
-        y_pred (array-like): Predicted values from model
-        """
-        # Calculate residuals and standardized residuals
+    # Calculate leverage using hat matrix
+    X = sm.add_constant(np.column_stack([np.ones_like(y_pred), y_pred]))  # Simple example matrix
+    hat_matrix = X @ np.linalg.inv(X.T @ X) @ X.T
+    leverage = np.diag(hat_matrix)
 
-        model = load_model("currentAiSolution.keras")
-        y_pred = model.predict(x_test).flatten()
-        residuals = y_test - y_pred
-        standardized_residuals = (residuals - np.mean(residuals)) / np.std(residuals)
+    #Cook's distance
+    cooks_d = (standardized_residuals ** 2) * leverage / (X.shape[1] * (1 - leverage) ** 2)
 
-        # Calculate leverage using hat matrix
-        X = sm.add_constant(np.column_stack([np.ones_like(y_pred), y_pred]))  # Simple example matrix
-        hat_matrix = X @ np.linalg.inv(X.T @ X) @ X.T
-        leverage = np.diag(hat_matrix)
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
 
-        # Calculate Cook's distance
-        cooks_d = (standardized_residuals ** 2) * leverage / (X.shape[1] * (1 - leverage) ** 2)
+    # 1. Residual vs Fitted values
+    axes[0, 0].scatter(y_pred, residuals, alpha=0.5)
+    axes[0, 0].axhline(y=0, color='r', linestyle='--')
+    axes[0, 0].set_title('Residual vs Fitted Values')
+    axes[0, 0].set_xlabel('Fitted Values')
+    axes[0, 0].set_ylabel('Residuals')
 
-        plt.figure(figsize=(15, 12))
+    # 2. Square Root of Standardized Residuals vs Fitted values
+    sqrt_abs_resid = np.sqrt(np.abs(standardized_residuals))
+    axes[0, 1].scatter(y_pred, sqrt_abs_resid, alpha=0.5)
+    axes[0, 1].set_title('Scale-Location (Sqrt Standardized Residuals vs Fitted)')
+    axes[0, 1].set_xlabel('Fitted Values')
+    axes[0, 1].set_ylabel('√|Standardized Residuals|')
 
-        # 1. Residual vs Fitted values
-        plt.subplot(2, 2, 1)
-        plt.scatter(y_pred, residuals, alpha=0.5)
-        plt.axhline(y=0, color='r', linestyle='--')
-        plt.title('Residual vs Fitted Values')
-        plt.xlabel('Fitted Values')
-        plt.ylabel('Residuals')
+    # 3. Q-Q plot of Standardized Residuals
+    sm.qqplot(standardized_residuals, line='45', fit=True, alpha=0.5, ax=axes[1, 0])
+    axes[1, 0].set_title('Normal Q-Q Plot')
+    axes[1, 0].set_xlabel('Theoretical Quantiles')
+    axes[1, 0].set_ylabel('Standardized Residuals')
 
-        # 2. Square Root of Standardized Residuals vs Fitted values
-        plt.subplot(2, 2, 2)
-        sqrt_abs_resid = np.sqrt(np.abs(standardized_residuals))
-        plt.scatter(y_pred, sqrt_abs_resid, alpha=0.5)
-        plt.title('Scale-Location (Sqrt Standardized Residuals vs Fitted)')
-        plt.xlabel('Fitted Values')
-        plt.ylabel('√|Standardized Residuals|')
+    # 4. Residual vs Leverage with Cook's distance contours
+    scatter = axes[1, 1].scatter(leverage, standardized_residuals, alpha=0.5, c=cooks_d, cmap='viridis')
+    axes[1, 1].set_title('Residual vs Leverage')
+    axes[1, 1].set_xlabel('Leverage')
+    axes[1, 1].set_ylabel('Standardized Residuals')
 
-        # 3. Q-Q plot of Standardized Residuals
-        plt.subplot(2, 2, 3)
-        sm.qqplot(standardized_residuals, line='45', fit=True, alpha=0.5)
-        plt.title('Normal Q-Q Plot')
-        plt.xlabel('Theoretical Quantiles')
-        plt.ylabel('Standardized Residuals')
+    # Add Cook's distance contours
+    x = np.linspace(min(leverage), max(leverage), 50)
+    for c in [0.5, 1]:
+        axes[1, 1].plot(x, np.sqrt((c * X.shape[1] * (1 - x) ** 2) / x),
+                        label=f"Cook's D={c}", linestyle='--', color='red')
+        axes[1, 1].plot(x, -np.sqrt((c * X.shape[1] * (1 - x) ** 2) / x),
+                        linestyle='--', color='red')
 
-        # 4. Residual vs Leverage with Cook's distance contours
-        plt.subplot(2, 2, 4)
-        plt.scatter(leverage, standardized_residuals, alpha=0.5, c=cooks_d, cmap='viridis')
+    axes[1, 1].legend()
+    fig.colorbar(scatter, ax=axes[1, 1], label="Cook's Distance")
 
-        # Add Cook's distance contours
-        x = np.linspace(min(leverage), max(leverage), 50)
-        for c in [0.5, 1]:
-            plt.plot(x, np.sqrt((c * X.shape[1] * (1 - x) ** 2) / x),
-                     label=f"Cook's D={c}", linestyle='--', color='red')
-            plt.plot(x, -np.sqrt((c * X.shape[1] * (1 - x) ** 2) / x),
-                     linestyle='--', color='red')
+    plt.tight_layout()
 
-        plt.title('Residual vs Leverage')
-        plt.xlabel('Leverage')
-        plt.ylabel('Standardized Residuals')
-        plt.colorbar(label="Cook's Distance")
-        plt.legend()
+    plt.savefig('../../documentation/diagnostic_plots.png', dpi=300)
 
-        plt.tight_layout()
-        plt.savefig('../../documentation/diagnostic_plots.png')
-        plt.close()
+def plot_scatter_with_regression():
 
-# def evaluate_model():
-#
-#     model = load_model("currentAiSolution.keras")
-#     test_loss, test_mae = model.evaluate(x_test, y_test, verbose=1)
-#     print(f"Test Loss: {test_loss}")
-#     print(f"Test Mean Absolute Error: {test_mae}")
-#
-#     # Predict on test data
-#     predictions = model.predict(x_test)
-#     # Combine predictions and actual values for comparison
-#     results = pd.DataFrame({
-#     "Actual Selling Price": y_test,
-#     "Predicted Selling Price": predictions.flatten()
-#     })
-#
-#     print(results.head())
+    # Load model and make predictions
+    model = load_model("currentAiSolution.keras")
+    y_pred = model.predict(x_test).flatten()
+
+    plt.figure(figsize=(8, 6))
+    sns.regplot(x=y_test, y=y_pred, scatter_kws={'alpha': 0.5}, line_kws={'color': 'red'}, ci=None)
+
+    plt.xlabel('Actual Values (y_test)')
+    plt.ylabel('Predicted Values (y_pred)')
+    plt.title('Scatter Plot of y_test vs y_pred with Regression Line')
+    plt.grid(True)
+
+    # Save plot
+    plt.savefig('../../documentation/scatter_regression_plot.png', dpi=300)
+
+
+# Call function to generate and save the plot
+
 
 if __name__ == "__main__":
     # Train model and get history
@@ -202,6 +191,9 @@ if __name__ == "__main__":
 
     #Diagonostic plot
     plot_diagnostic_plots()
+
+    #Scatter plot
+    plot_scatter_with_regression()
 
     # Evaluate with epoch context
     evaluate_model(trained_model, training_history)
