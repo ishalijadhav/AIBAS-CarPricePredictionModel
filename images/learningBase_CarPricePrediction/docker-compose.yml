@@ -4,10 +4,6 @@ services:
     image: learningbase_carpriceprediction
     volumes:
       - ai_system:/tmp
-  activation_base:
-    image: activationbase_carpriceprediction
-    volumes:
-      - ai_system:/tmp
 volumes:
   ai_system:
     external: true

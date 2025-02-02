@@ -4,13 +4,13 @@ import pandas as pd
 import seaborn as sns
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.layers import Dense, Dropout, Activation
 from tensorflow.keras.models import load_model
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 
-train_data = pd.read_csv('../../data/training_data.csv')
-test_data = pd.read_csv('../../data/test_data.csv')
+train_data = pd.read_csv(r'../../data/training_data.csv')
+test_data = pd.read_csv(r'../../data/test_data.csv')
 
 # Separating independent and dependent variable
 x_train = train_data.drop('selling_price', axis=1)  # Independent variables
@@ -22,33 +22,44 @@ y_test = test_data['selling_price']
 def build_model():
 
     model = keras.Sequential([
-    Dense(64, input_dim=x_train.shape[1], activation='relu'),  # Input layer
-    Dropout(0.2),
-    Dense(32, activation='relu'),
-    Dropout(0.2),
-    Dense(16, activation='relu'),
-    Dense(1, activation='linear')
+    Dense(128, input_dim=x_train.shape[1]),  # Increased neurons
+        Activation('relu'),
+        Dropout(0.2),
+
+        Dense(64),                           #Putting Activation before BatchNorm
+        Activation('relu'),
+        Dropout(0.2),
+
+        Dense(32),
+        Activation('relu'),
+        Dropout(0.2),
+
+        Dense(16, activation='relu'),
+
+        Dense(1, activation='linear')  # Output layer for regression
     ])
 
+    optimizer = keras.optimizers.Adam(learning_rate=0.001)         
+
     model.compile(
-    optimizer='adam',
+    optimizer=optimizer,
     loss='mean_squared_error',
     metrics=['mean_absolute_error']
     )
 
     # Early stopping to prevent overfitting
-    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)       
 
     history = model.fit(
     x_train, y_train,
     validation_split=0.2,
     epochs=100,
-    batch_size=32,
+    batch_size=64,
     callbacks=[early_stopping],
     verbose=1
     )
 
-    model.save('currentAiSolution.keras')
+    model.save('currentAiSolution_2.keras')
     return model, history
 
 
@@ -74,7 +85,7 @@ def plot_training_curves(epochs, loss, val_loss, metric, val_metric):
     plt.ylabel('MAE')
     plt.legend()
 
-    plt.savefig('../../documentation/training_curves.png',dpi=300)
+    plt.savefig('../../documentation/training_curves_2.png',dpi=300)
     plt.close()
 
 def evaluate_model(model, history):
@@ -100,12 +111,12 @@ def save_training_report(history, path='../../documentation/'):
         'final_val_mae': history.history['val_mean_absolute_error'][-1]
     }
 
-    pd.DataFrame(report, index=[0]).to_csv(f'{path}/training_report.csv', index=False)
+    pd.DataFrame(report, index=[0]).to_csv(f'{path}/training_report.csv', mode='a', index=False)
 
 
 def plot_diagnostic_plots():
     # Load model and make predictions
-    model = load_model("currentAiSolution.keras")
+    model = load_model("currentAiSolution_2.keras")
     y_pred = model.predict(x_test).flatten()
     residuals = y_test - y_pred
     standardized_residuals = (residuals - np.mean(residuals)) / np.std(residuals)
@@ -159,12 +170,12 @@ def plot_diagnostic_plots():
 
     plt.tight_layout()
 
-    plt.savefig('../../documentation/diagnostic_plots.png', dpi=300)
+    plt.savefig('../../documentation/diagnostic_plots_2.png', dpi=300)
 
 def plot_scatter_with_regression():
 
     # Load model and make predictions
-    model = load_model("currentAiSolution.keras")
+    model = load_model("currentAiSolution_2.keras")
     y_pred = model.predict(x_test).flatten()
 
     plt.figure(figsize=(8, 6))
@@ -176,7 +187,7 @@ def plot_scatter_with_regression():
     plt.grid(True)
 
     # Save plot
-    plt.savefig('../../documentation/scatter_regression_plot.png', dpi=300)
+    plt.savefig('../../documentation/scatter_regression_plot_2.png', dpi=300)
 
 
 # Call function to generate and save the plot
@@ -197,11 +208,3 @@ if __name__ == "__main__":
 
     # Evaluate with epoch context
     evaluate_model(trained_model, training_history)
-
-
-
-
-
-
-
-
