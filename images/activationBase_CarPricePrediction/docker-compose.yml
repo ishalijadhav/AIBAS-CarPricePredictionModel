@@ -1,6 +1,9 @@
 version: '3'
 services:
   activation_base:
+    build:
+      context: ../../  # Project root
+      dockerfile: images/activationBase_CarPricePrediction/Dockerfile
     image: activationbase_carpriceprediction
     volumes:
       - ai_system:/tmp

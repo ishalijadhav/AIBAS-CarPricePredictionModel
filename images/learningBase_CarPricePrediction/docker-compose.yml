@@ -1,6 +1,9 @@
 version: '3'
 services:
   learning_base:
+    build:
+      context: ../../  # Project root
+      dockerfile: images/learningBase_CarPricePrediction/Dockerfile
     image: learningbase_carpriceprediction
     volumes:
       - ai_system:/tmp
