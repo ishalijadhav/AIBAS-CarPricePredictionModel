@@ -1,0 +1,17 @@
+version: '3'
+services:
+  code_base:
+    build: .
+    image: codebase_carpriceprediction
+    container_name: codebase_carpriceprediction
+    volumes:
+      - ai_system:/tmp
+    command:
+    - sh
+    - "-c"
+    - |
+      rm -rf /tmp/codeBase/ && cp -r /codeBase/ /tmp/;
+    - "python /codeBase/RunAIModel.py"
+volumes:
+  ai_system:
+    external: true

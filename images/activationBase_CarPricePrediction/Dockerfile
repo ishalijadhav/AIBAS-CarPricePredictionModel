@@ -1,4 +1,4 @@
 FROM busybox
-RUN mkdir -p /tmp/activationBase
-COPY ../data/activation_data.csv /tmp/activationBase/
-COPY Readme.md /tmp/activationBase/Readme.md
+WORKDIR /activationBase
+COPY data/activation_data.csv /activationBase/
+COPY Readme.md /activationBase/Readme.md

@@ -1,0 +1,16 @@
+version: '3.9'
+services:
+  knowledge_base:
+    build: .
+    image: knowledgebase_carpriceprediction
+    container_name: knowledgebase_carpriceprediction
+    volumes:
+      - ai_system:/tmp
+    command:
+    - sh
+    - "-c"
+    - |
+      rm -rf /tmp/knowledgeBase/ && cp -r /knowledgeBase/ /tmp/;
+volumes:
+  ai_system:
+    external: true

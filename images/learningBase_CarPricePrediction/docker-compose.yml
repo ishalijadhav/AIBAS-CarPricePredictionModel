@@ -1,12 +1,15 @@
-version: '3'
+version: '3.9'
 services:
   learning_base:
-    build:
-      context: ../../  # Project root
-      dockerfile: images/learningBase_CarPricePrediction/Dockerfile
     image: learningbase_carpriceprediction
+    container_name: learningbase_carpriceprediction
     volumes:
       - ai_system:/tmp
+    command:
+    - sh
+    - "-c"
+    - |
+      rm -rf /tmp/learningBase/ && cp -r /learningBase/ /tmp/;
 volumes:
   ai_system:
     external: true
