@@ -5,7 +5,7 @@ import keras
 tf.config.set_visible_devices([], 'GPU')  # Disable GPU
 
 # activation_data = pd.read_csv("/tmp/activationBase/activation_data.csv", index_col=0)
-activation_data = pd.read_csv("/tmp/activationBase/activation_data.csv.csv")
+activation_data = pd.read_csv("/tmp/activationBase/activation_data.csv")
 print(activation_data.columns)
 print("Activation data shape:", activation_data.shape)
 activation_data = activation_data.drop(columns=["selling_price"], axis=1)
