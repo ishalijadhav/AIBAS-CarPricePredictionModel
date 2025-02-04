@@ -1,0 +1,29 @@
+version: '3'
+services:
+  activation_base:
+    image: activationbase_carpriceprediction
+    container_name: activationbase_container
+    volumes:
+      - ai_system:/tmp
+
+  knowledge_base:
+    image: knowledgebase_carpriceprediction
+    container_name: knowledgebase_container
+    volumes:
+      - ai_system:/tmp
+    depends_on:
+      - activation_base
+
+  code_base:
+    image: codebase_carpriceprediction
+    container_name: codebase_container
+    volumes:
+      - ai_system:/tmp
+    depends_on:
+      - activation_base
+      - knowledge_base
+    command: ["python", "/tmp/codeBase/RunAIModel.py"]
+
+volumes:
+  ai_system:
+    external: true

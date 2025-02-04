@@ -1,6 +1,7 @@
 version: "3.0"
 services:
   activation_base:
+    build: .
     image: activationbase_carpriceprediction
     volumes:
        - ai_system:/tmp
@@ -10,6 +11,7 @@ services:
     - |
       rm -rf /tmp/activationBase/ && cp -r /activationBase/ /tmp/;
   knowledge_base:
+    build: .
     image: knowledgebase_carpriceprediction
     volumes:
        - ai_system:/tmp
@@ -20,6 +22,7 @@ services:
       rm -rf /tmp/knowledgeBase/ && cp -r /knowledgeBase/ /tmp/;
 
   code_base:
+    build: .
     image: codebase_carpriceprediction
     volumes:
        - ai_system:/tmp

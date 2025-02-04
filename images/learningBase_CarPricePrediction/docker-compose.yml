@@ -1,6 +1,7 @@
 version: '3.9'
 services:
   learning_base:
+    build: .
     image: learningbase_carpriceprediction
     container_name: learningbase_carpriceprediction
     volumes:
