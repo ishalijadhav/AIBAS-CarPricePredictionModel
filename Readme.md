@@ -1,4 +1,4 @@
-# 🚗 AIBAS Car Price Prediction Model
+# 🚗 Car Price Prediction Model
 
 This repository contains a machine learning model that predicts the prices of used cars based on key features. It was developed as part of the AIBAS coursework project.
 
